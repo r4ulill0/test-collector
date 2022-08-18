@@ -24,20 +24,18 @@ class Collector(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if (tag == 'div'):
-            question_regexp = r".*que\s.*"
             for att in attrs:
 
                 # Detección de preguntas
-                if (att[0] == 'class' and re.match(question_regexp, att[1])):
+                # Detección de enunciado
+                if (att[0] == 'class' and att[1] == "qtext"):
+                    self.fase_enunciado = True
+                    self.span_count = 0
                     print('RESPUESTAS CORRECTAS LEIDAS')
                     print(self.respuesta_correcta_actual)
                     self.respuesta_correcta_actual = ''
                     self.pregunta_actual += 1
                     self.respuesta_actual = 0
-                # Detección de enunciado
-                elif (att[0] == 'class' and att[1] == "qtext"):
-                    self.fase_enunciado = True
-                    self.span_count = 0
                 # Para simplificar la detección del fin del bloque respuestas,
                 # detectamos el div de 'feedback'
                 elif (att[0] == 'class' and re.match(r'.*outcome.*', att[1])):
@@ -55,10 +53,10 @@ class Collector(HTMLParser):
     def handle_endtag(self, tag):
         if (tag == 'div' and self.fase_respuesta_correcta):
             self.fase_respuesta_correcta = False
-
-        if (self.fase_enunciado and tag == 'div'):
+        if (tag == 'div' and self.fase_enunciado):
             self.fase_enunciado = False
             self.p_count = 0
+
         if (self.fase_enunciado and tag == 'p'):
             if (self.leyendo_linea):
                 self.leyendo_linea = False
