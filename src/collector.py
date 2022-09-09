@@ -2,6 +2,8 @@ import argparse
 import re
 from html.parser import HTMLParser
 
+from persistor import Persistor
+
 
 class Pregunta():
 
@@ -172,6 +174,9 @@ if (__name__ == '__main__'):
     entrada = argparse.ArgumentParser()
     entrada.add_argument('archivo', help='archivo html a parsear')
     entrada.add_argument('-d', '--debug', action='store_true', help='Activa la salida de depuración')
+
+    persistor = Persistor()
+
     args = entrada.parse_args()
     parser = Collector()
     parser.debug = args.debug
@@ -192,4 +197,4 @@ if (__name__ == '__main__'):
           else 'No se han detectado preguntas con respuesta múltiple')
 
     imprime_resultados(parser)
-
+    persistor.persiste_preguntas(parser.preguntas)
