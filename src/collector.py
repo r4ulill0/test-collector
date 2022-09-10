@@ -146,12 +146,13 @@ class Collector(HTMLParser):
             p = self.preguntas[self.pregunta_actual-1]
 
 
-def imprime_resultados(parser):
+def imprime_resultados(preguntas, debug=False):
     preguntas_sin_respuesta = 0
-    if parser.debug:
+    sin_respuesta = []
+    if debug:
         print('\nRESULTADOS DEL ESCANEO\n########\n#######')
-    for pregunta in parser.preguntas:
-        if parser.debug:
+    for pregunta in preguntas:
+        if debug:
             for enunciado in pregunta.enunciado:
                 print(enunciado, flush=True)
             for index in range(len(pregunta.respuestas)):
@@ -164,10 +165,13 @@ def imprime_resultados(parser):
 
         if (len(pregunta.correctas) < 1):
             preguntas_sin_respuesta += 1
+            sin_respuesta.append(preguntas.index(pregunta))
 
     if preguntas_sin_respuesta:
         print('#####\n#Hay {} preguntas sin respuesta\n#####'
               .format(preguntas_sin_respuesta))
+        print('Las incidencias han ocurrido en las preguntas:\n{}'
+              .format(' '.join(str(sin_respuesta))))
 
 
 if (__name__ == '__main__'):
@@ -196,5 +200,5 @@ if (__name__ == '__main__'):
     print('Se han detectado preguntas con respuesta múltiple' if respuesta_multiple
           else 'No se han detectado preguntas con respuesta múltiple')
 
-    imprime_resultados(parser)
+    imprime_resultados(parser.preguntas, parser.debug)
     persistor.persiste_preguntas(parser.preguntas)
