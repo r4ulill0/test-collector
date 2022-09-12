@@ -1,8 +1,8 @@
 import re
-import curses
 import time
 from curses import wrapper
 from argparse import ArgumentParser
+from random import shuffle
 import collector
 
 KEY_UP = ('KEY_UP', 'K')
@@ -13,13 +13,33 @@ MAIN_MENU_OPCIONES = ('Examen normal',
                       'Probar coleccion en orden',
                       'Examen personalizado',
                       'Salir')
+EXAM_MENU_OPCIONES = ('Anterior',
+                      'Siguiente',
+                      'Terminar examen',
+                      'Marcar pregunta',
+                      'Salir')
 MMO_IDENTACION_BASE = 5  # Posición horizontal de las opciones del menu
-MMO_ALTURA_BASE = 30  # Altura a la que se empiezan a mostrar las opciones del menu
+MMO_ALTURA_BASE = 5  # Altura a la que se empiezan a mostrar las opciones del menu
 MMO_SEPARACION = 2    # Separacion entre las opciones del menu principal
+
+EXM_PREGUNTA_ALTURA_BASE = 5
+EXM_PREGUNTA_IDENTACION_BASE = 10
+EXM_RESPUESTA_ALTURA_BASE = 20
+EXM_RESPUESTA_IDENTACION_BASE = 10
+EXM_RELOJ_ALTURA = 1
+EXM_RELOJ_IDENTACION = 80
+EXM_MENU_ALTURA_BASE = 30
+EXM_MENU_IDENTACION_BASE = 20
+EXM_SEPARACION_WIDGET = 4
+EXM_SEPARACION_RESPUESTAS = 2
+
 
 def main(pantalla, preguntas):
     pantalla.nodelay(True)
     opcion = 0
+
+    # Copiamos porque shuffle trabaja con la propia lista
+    copia_preguntas = preguntas.copy()
 
     # Menu principal
     while True:
@@ -36,7 +56,10 @@ def main(pantalla, preguntas):
         elif seleccion in KEY_SELECT:
             # Gestión de selección
             if opcion == 0:
-                pass
+                # TODO hacer método que haga un shuffle de respuestas
+                # manteniendo la referencia a la respuesta correcta
+                shuffle(copia_preguntas)
+                examen(pantalla, copia_preguntas)
             if opcion == 1:
                 pass
             if opcion == 2:
@@ -48,6 +71,64 @@ def main(pantalla, preguntas):
 
         pantalla.refresh()
         time.sleep(0.1)
+
+def examen(pantalla, preguntas, duracion = None):
+    examinandose = True
+    comienzo = time.time()
+    pregunta_seleccionada = 0
+    # TODO implementar seleccion
+    seleccion = 0
+    while examinandose:
+        pantalla.clear()
+        render_enunciado_examen(pantalla, preguntas[pregunta_seleccionada])
+        render_tiempo_examen(pantalla, comienzo, duracion)
+        render_respuestas_examen(pantalla, preguntas[pregunta_seleccionada])
+        render_menu_examen(pantalla, seleccion)
+
+        pantalla.refresh()
+
+
+def render_enunciado_examen(pantalla, pregunta):
+    alto = EXM_PREGUNTA_ALTURA_BASE
+    ancho = EXM_PREGUNTA_IDENTACION_BASE
+    for linea in pregunta.enunciado:
+        pantalla.addstr(alto,
+                        ancho,
+                        linea)
+        # TODO arreglar problema de renderizado cuando
+        # una linea ocupa varias filas en pantalla
+        alto += 1
+        ancho += 1
+
+
+def render_tiempo_examen(pantalla, comienzo, final):
+    linea = 'Sin tiempo límite'
+    if final:
+        tiempo = final - comienzo
+        linea = time.ctime(tiempo)
+
+    pantalla.addstr(EXM_RELOJ_ALTURA,
+                    EXM_RELOJ_IDENTACION,
+                    linea)
+
+# TODO
+def render_respuestas_examen(pantalla, pregunta):
+    pass
+
+def render_menu_examen(pantalla, seleccion):
+    if seleccion is not None and (seleccion < 0
+                                  or seleccion > len(EXAM_MENU_OPCIONES)):
+        raise Exception(f'Seleccion en menu examen inválida: {seleccion}')
+    menu = ''
+    for i in range(len(EXAM_MENU_OPCIONES)):
+        opt = f'{EXAM_MENU_OPCIONES[i]}     ' if seleccion != i \
+            else f'>{EXAM_MENU_OPCIONES[i]}<     '
+
+        menu += opt
+    pantalla.addstr(EXM_MENU_ALTURA_BASE,
+                    EXM_MENU_IDENTACION_BASE,
+                    menu)
+
 
 def render_main_menu(pantalla, opcion):
     indicacion = 'Seleccione una opción:'
